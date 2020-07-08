@@ -50,6 +50,7 @@
     <Compile Include="src\Extensions\ConsoleExtensions.cs" />
     <Compile Include="src\Extensions\Format.cs" />
     <Compile Include="src\Extensions\IOExtensions.cs" />
+    <Compile Include="src\Extensions\ParsedComponentExtensions.cs" />
     <Compile Include="src\Extensions\StringExtensions.cs" />
     <Compile Include="src\Generation.cs" />
     <Compile Include="src\NanoEcsGenerator.cs" />

@@ -32,6 +32,10 @@
             }
         }
 
+        public const string ComponentTitlePrefix = "Component";
+        public const string ComponentBaseClassName = "ComponentEcs";
+        public const string UniqueAttibute = "Unique";
+        public const string ReactiveAttribute = "Reactive";
 
         const string ComponentNameTag = "*ComponentName*";
         const string ContextNameTag = "*Context*";
@@ -51,9 +55,7 @@
         const string ComponentTypesSequenceTag = "@ComponentTypesSequence@";
         const string ContextUniqueComponentsSequenceTag = "@ContextUniqueComponentsSequence@";
 
-        const string ComponentTitlePrefix = "Component";
-        const string ComponentBaseClassName = "ComponentEcs";
-        const string UniqueAttibute = "Unique";
+
         #endregion
 
         #region State
@@ -342,18 +344,28 @@
 
             var subSnippet = snippet.Split(new string[] { ComponentReactiveBlock }, StringSplitOptions.None)[1];
 
-            var properties = parsedComponent.Fields
-                .Select(field => subSnippet
-                        .Replace(FieldPascalCaseTag, field.Name.VariateFirstChar())
-                        .Replace(FieldCamelCaseTag, field.Name)
-                        .Replace(FieldCamelCase_SetTag, field.Name == "value" ? "this." + field.Name : field.Name)
-                        .Replace(FieldTypeTag, field.Type)
-                        .Replace(FieldIdTag, field.Index.ToString()))
-                .Aggregate((x, y) => x + Format.NewLine(1) + y);
+            string members = "";
+
+            if (parsedComponent.IsReactive())
+            {
+                members = parsedComponent.Fields
+                    .Select(field => subSnippet
+                            .Replace(FieldPascalCaseTag, field.Name.VariateFirstChar())
+                            .Replace(FieldCamelCaseTag, field.Name)
+                            .Replace(FieldCamelCase_SetTag, field.Name == "value" ? "this." + field.Name : field.Name)
+                            .Replace(FieldTypeTag, field.Type)
+                            .Replace(FieldIdTag, field.Index.ToString()))
+                    .Aggregate((x, y) => x + Format.NewLine(1) + y);
+            } else
+            {
+                members = parsedComponent.Fields
+                    .Select(field => $"public {field.Type} {field.Name.FirstCharToUpper()};")
+                    .Aggregate((x, y) => x + Format.NewLine(1) + y);
+            }
 
             var componentReactive = snippet
                 .Replace(ComponentNameTag, parsedComponent.ComponentName)
-                .Replace(subSnippet, properties)
+                .Replace(subSnippet, members)
                 .Replace(ComponentReactiveBlock, "");
 
             if (MayBakeUsings()) componentReactive = parsedComponent.Usings + componentReactive;
@@ -398,7 +410,7 @@
                     new Tag(TagKeys.Component, parsedComponent.ComponentName),
                     new Tag(TagKeys.GenerationType, GenerationTypes.GroupBuilder));
 
-                if (!parsedComponent.HasFields) continue;
+                if (!parsedComponent.HasFields || !parsedComponent.IsReactive()) continue;
 
                 var snippetPath = parsedComponent.Fields.Length > 1 ? settings.CodeSnippets.Collector : settings.CodeSnippets.CollectorFieldless;
 
@@ -567,12 +579,14 @@
                     var NanoListFieldsInitialization = parsedComponent.Fields.ToList()
                         .Where(field => field.Type.Contains("NanoList"))
                         .Select(y =>
-                        Format.NewLine() + "c." + y.Name.VariateFirstChar() + ".Initialize(c._InternalOnValueChange, " + y.Index + ");" +
+                        Format.NewLine() + "c." +
+                        (parsedComponent.IsReactive() ? y.Name.VariateFirstChar() : y.Name.FirstCharToUpper())
+                        + ".Initialize(c._InternalOnValueChange, " + y.Index + ");" +
                         Format.NewLine() + "if (c." + y.Name.VariateFirstChar() + ".Count > 0) { c._InternalOnValueChange(" + y.Index + "); }" +
                         Format.NewLine()).ToList();
 
                     add_extension = add_extension
-                        .Replace(ClearingActionsSequenceTag, clearActionsSequence)
+                        .Replace(ClearingActionsSequenceTag, parsedComponent.IsReactive() ? clearActionsSequence : "")
                         .Replace(ComponentNameTag, parsedComponent.ComponentName)
                         .Replace(ContextNameTag, context);
 
@@ -602,7 +616,7 @@
                 .Aggregate((x, y) => x + ", " + y);
 
             var fieldSequence = parsedComponent.Fields
-                .Select(x => "c." + x.Name.VariateFirstChar() + " = " + x.Name + ";")
+                .Select(x => "c." + (parsedComponent.IsReactive() ? x.Name.VariateFirstChar() : x.Name.FirstCharToUpper()) + " = " + x.Name + ";")
                 .Aggregate((x, y) => x + Format.NewLine(2) + y);
 
             add_extension = add_extension
