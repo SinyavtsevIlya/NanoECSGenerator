@@ -32,6 +32,8 @@
             }
         }
 
+        public const string NanoECSNameSpace = "NanoEcs";
+
         public const string ComponentTitlePrefix = "Component";
         public const string ComponentBaseClassName = "ComponentEcs";
         public const string UniqueAttibute = "Unique";
@@ -195,6 +197,8 @@
 
         void CollectOveralUsings()
         {
+            state.OveralUsings.Add($"using {NanoECSNameSpace}; {Format.NewLine()}");
+
             foreach (var component in state.ParsedComponents)
             {
                 if (component.Usings != string.Empty)
