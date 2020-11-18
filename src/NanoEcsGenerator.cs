@@ -849,7 +849,7 @@
             {
                 get
                 {
-                    var result = userSettings.GetLines(" ForseReactiveComponents:").FirstOrDefault();
+                    var result = userSettings.GetLines(" reactivityEnabled:").FirstOrDefault();
                     if (result == null) return false;
                     return result.Contains("1");
                 }
