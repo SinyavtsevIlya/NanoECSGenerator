@@ -10,7 +10,7 @@ namespace NanoEcs.Generator
     {
         public static bool IsReactive(this NanoEcsGenerator.ParsedComponent component)
         {
-            return component.Attributes.Contains(NanoEcsGenerator.ReactiveAttribute);
+            return component.Attributes.Contains(NanoEcsGenerator.ReactiveAttribute) || component.ForseReactive;
         }
     }
 }

@@ -709,12 +709,18 @@
             result.IsUnique = isUnique;
             result.HasFields = hasFields;
             result.Usings = usings;
+
             if (fields.Any())
             {
                 var r = fields
                    .Select(x => x.Split(' ').Where(y => !(y == string.Empty || y == null || y.Contains(" "))).Skip(1).ToList()).ToList();
                 r = r.Take(r.Count - 1).ToList();
                 result.Fields = r.Select(fieldPair => new FieldParsed() { Index = r.IndexOf(fieldPair), Type = fieldPair[0], Name = fieldPair[1] }).ToArray();
+            }
+
+            if (settings.ForseReactiveComponents)
+            {
+                result.ForseReactive = true;
             }
             return result;
         }
@@ -760,8 +766,14 @@
                         break;
                 }
             }
-        }
 
+            if (settings.IsFullStateSerializationEnabled)
+            {
+                state.GenerationResults = null;
+                var serializedState = Newtonsoft.Json.JsonConvert.SerializeObject(state);
+                File.WriteAllText(corePath + "GenerationState.json", serializedState);
+            }
+        }
 
         #endregion
 
@@ -831,8 +843,18 @@
             public GenerationSettings(string userSettings)
             {
                 this.userSettings = userSettings;
+                IsFullStateSerializationEnabled = true;
             }
-
+            public bool ForseReactiveComponents
+            {
+                get
+                {
+                    var result = userSettings.GetLines(" ForseReactiveComponents:").FirstOrDefault();
+                    if (result == null) return false;
+                    return result.Contains("1");
+                }
+            }
+            public bool IsFullStateSerializationEnabled { get; private set; }
             public string ProjectRootPath;
             public string SettingsPath;
             public CodeSnippets CodeSnippets;
@@ -922,6 +944,7 @@
             public bool HasFields;
             public FieldParsed[] Fields;
             public string Usings;
+            public bool ForseReactive;
         }
 
         public class GenerationCheckResult
