@@ -127,11 +127,17 @@
 
             foreach (var component in state.ParsedComponents)
             {
-                ExtendComponentFieldTypes(component);
-
-                GenerateComponentExtensions(component);
-                GenerateComponentReactives(component);
-                GenerateGroupBuilders(component);
+                try
+                {
+                    ExtendComponentFieldTypes(component);
+                    GenerateComponentExtensions(component);
+                    GenerateComponentReactives(component);
+                    GenerateGroupBuilders(component);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"failed to generate a component for {component.ComponentName}. {ex.StackTrace}");
+                }
             }
 
             CollectOveralUsings();
@@ -359,7 +365,7 @@
                             .Replace(FieldCamelCase_SetTag, field.Name == "value" ? "this." + field.Name : field.Name)
                             .Replace(FieldTypeTag, field.Type)
                             .Replace(FieldIdTag, field.Index.ToString()))
-                    .Aggregate((x, y) => x + Format.NewLine(1) + y);
+                            .Aggregate((x, y) => x + Format.NewLine(1) + y);
             } else
             {
                 members = parsedComponent.Fields
